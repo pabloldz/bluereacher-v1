@@ -4,10 +4,7 @@
 #include <BLEUtils.h>
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
-#include <ESP32Time.h>
 #include <TimeLib.h>
-
-ESP32Time RTC(0);
 
 int scanTime = 60; // in seconds
 BLEScan* pBLEScan;
@@ -43,8 +40,6 @@ void setup() {
   pBLEScan->setWindow(99);  // less or equal setInterval value
 
   Serial.println("inicializacion correcta");	// texto de inicializacion correcta
-
-
   Serial.println("Scanning...");
   
 }//fin setup
@@ -60,10 +55,9 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
     Serial.println(foundDevices->getCount());
     Serial.println("Scan done!");
     Serial.println("Guardado correctamente");	// texto de escritura correcta en monitor serie
-
     String fileNameop = openUniqueFileName();
-    Serial.println(fileNameop);
     archivo = SD.open(fileNameop);		// apertura de archivo prueba.txt
+    Serial.println(fileNameop);
     if (archivo) {
     Serial.println("Contenido del archivo:");	// texto en monitor serie
     while (archivo.available()) {		// mientras exista contenido en el archivo
@@ -71,8 +65,25 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
     }
     archivo.close();	
     delay(10000);
-    
-    setup();	
+      Serial.println("Inicializando tarjeta ...");	// texto en ventana de monitor
+  if (!SD.begin(SSpin)) {			// inicializacion de tarjeta SD
+    Serial.println("fallo en inicializacion !");// si falla se muestra texto correspondiente y
+    return;					// se sale del setup() para finalizar el programa
+  }
+  String fileName = createUniqueFileName();
+  archivo = SD.open(fileName, FILE_WRITE);	// apertura para lectura/escritura de archivo prueba.txt
+  BLEDevice::init("");
+  pBLEScan = BLEDevice::getScan(); //create new scan
+  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
+  pBLEScan->setActiveScan(true); //active scan uses more power, but get results faster
+  pBLEScan->setInterval(100);
+  pBLEScan->setWindow(99);  // less or equal setInterval value
+
+  Serial.println("inicializacion correcta");	// texto de inicializacion correcta
+
+
+  Serial.println("Scanning...");
+    	
   } 
   if(!archivo) {
     Serial.println("error en apertura de prueba.txt");	// texto de falla en apertura de archivo
