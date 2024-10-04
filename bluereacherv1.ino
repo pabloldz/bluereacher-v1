@@ -6,6 +6,11 @@
 #include <BLEAdvertisedDevice.h>
 #include <TimeLib.h>
 
+//Declaramos el pin que encendera
+int pin_dos = 2;
+int pin_15 = 15;
+
+
 int scanTime = 60; // in seconds
 BLEScan* pBLEScan;
 
@@ -19,12 +24,37 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     String hora = String(day()) + "/" + String(month()) + "/" + String(year()) + ","+ String(hour()) + ":" + String(minute()) + ":" + String(second()) + ",";//capturar la hora actual
     archivo.print(hora);
     archivo.println(advertisedDevice.toString());
+    //Encendemos el led
+    digitalWrite(pin_15, HIGH);
+    //Esperamos un segundo
+    delay(100);
+    //Apagamos el led
+    digitalWrite(pin_15, LOW);
+    //Esperamos un segundo
+    delay(100);
   }
 };
 
 void setup() {
-  Serial.begin(115200);				// inicializa monitor serie a 9600 bps
-  setTime(0, 0, 0, 30, 9, 2024);
+  Serial.begin(115200);
+  pinMode(4, INPUT);
+  pinMode(pin_dos, OUTPUT);
+  pinMode(pin_15, OUTPUT);
+//-------------------------------------------------------------------------------
+
+  digitalWrite(pin_dos, HIGH);//Encendemos el led
+  delay(5000);//Esperamos un segundo
+  for(int j=0;j<=8;j++)
+  {
+  digitalWrite(pin_15, HIGH);    //Encendemos el led
+  delay(100);  //Esperamos un segundo
+  digitalWrite(pin_15, LOW);  //Apagamos el led
+  delay(100);  //Esperamos un segundo
+  }
+  digitalWrite(pin_dos, LOW);  //Apagamos el led
+  //Esperamos un segundo
+  delay(1000);
+  setTime(9, 0, 0, 02, 10, 2024);
   Serial.println("Inicializando tarjeta ...");	// texto en ventana de monitor
   if (!SD.begin(SSpin)) {			// inicializacion de tarjeta SD
     Serial.println("fallo en inicializacion !");// si falla se muestra texto correspondiente y
@@ -40,13 +70,22 @@ void setup() {
   pBLEScan->setWindow(99);  // less or equal setInterval value
 
   Serial.println("inicializacion correcta");	// texto de inicializacion correcta
-  Serial.println("Scanning...");
-  
+  delay(100); 
+  estado=1;
+
+
 }//fin setup
 
 void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
-  // nada por aqui
-    // put your main code here, to run repeatedly:
+    Serial.println("Scanning...");
+    for(int k=0;k<=2;k++)
+    {
+      digitalWrite(pin_dos, HIGH);//Encendemos el led
+      delay(1000);//Esperamos un segundo
+      digitalWrite(pin_dos, LOW);//Apagamos el led
+      delay(1000);//Esperamos un segundo
+    }
+
     if(archivo)
     {
     BLEScanResults *foundDevices = pBLEScan->start(scanTime, false);
@@ -55,6 +94,14 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
     Serial.println(foundDevices->getCount());
     Serial.println("Scan done!");
     Serial.println("Guardado correctamente");	// texto de escritura correcta en monitor serie
+    for(int l=0;l<=8;l++)
+    {
+      digitalWrite(pin_dos, HIGH);//Encendemos el led
+      delay(100);//Esperamos un segundo
+      digitalWrite(pin_dos, LOW);//Apagamos el led
+      delay(100);//Esperamos un segundo
+    }
+
     String fileNameop = openUniqueFileName();
     archivo = SD.open(fileNameop);		// apertura de archivo prueba.txt
     Serial.println(fileNameop);
