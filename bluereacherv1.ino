@@ -37,7 +37,6 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
 void setup() {
   Serial.begin(115200);
-  pinMode(4, INPUT);
   pinMode(pin_dos, OUTPUT);
   pinMode(pin_15, OUTPUT);
 //-------------------------------------------------------------------------------
@@ -54,14 +53,16 @@ void setup() {
   digitalWrite(pin_dos, LOW);  //Apagamos el led
   //Esperamos un segundo
   delay(1000);
-  setTime(9, 0, 0, 02, 10, 2024);
+  setTime(17, 26, 0, 11, 10, 2024);
   Serial.println("Inicializando tarjeta ...");	// texto en ventana de monitor
   if (!SD.begin(SSpin)) {			// inicializacion de tarjeta SD
-    Serial.println("fallo en inicializacion !");// si falla se muestra texto correspondiente y
+    //Serial.println("fallo en inicializacion !");// si falla se muestra texto correspondiente y
     return;					// se sale del setup() para finalizar el programa
   }
   String fileName = createUniqueFileName();
   archivo = SD.open(fileName, FILE_WRITE);	// apertura para lectura/escritura de archivo prueba.txt
+  
+  
   BLEDevice::init("");
   pBLEScan = BLEDevice::getScan(); //create new scan
   pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
@@ -71,7 +72,7 @@ void setup() {
 
   Serial.println("inicializacion correcta");	// texto de inicializacion correcta
   delay(100); 
-  estado=1;
+  
 
 
 }//fin setup
@@ -108,11 +109,17 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
     if (archivo) {
     Serial.println("Contenido del archivo:");	// texto en monitor serie
     while (archivo.available()) {		// mientras exista contenido en el archivo
-      Serial.write(archivo.read());  		// lectura de a un caracter por vez
+    Serial.write(archivo.read());  		// lectura de a un caracter por vez
     }
     archivo.close();	
     delay(10000);
-      Serial.println("Inicializando tarjeta ...");	// texto en ventana de monitor
+      }//fin if apertura
+    if(!archivo)
+    {
+      Serial.println("Fallo de apertura...")
+      Serial.println(fileNameop);
+    }//fin if falla de apertura
+  Serial.println("Inicializando tarjeta ...");	// texto en ventana de monitor
   if (!SD.begin(SSpin)) {			// inicializacion de tarjeta SD
     Serial.println("fallo en inicializacion !");// si falla se muestra texto correspondiente y
     return;					// se sale del setup() para finalizar el programa
@@ -131,10 +138,8 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
 
   Serial.println("Scanning...");
     	
-  } 
-  if(!archivo) {
-    Serial.println("error en apertura de prueba.txt");	// texto de falla en apertura de archivo
-  }//FIN IF ARCHIVO NO SE ABRE
+ 
+
     }//FIN IF ARCHIVO
 }//FIN LOOP
 
