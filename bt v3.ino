@@ -8,8 +8,7 @@
 //Declaramos el pin que encendera
 int pin_dos = 2;
 int pin_15 = 15;
-time_t t = now();//almacena el tiempo actual en variable t
-int scanTime = 300; // in seconds
+int scanTime = 10; // in seconds
 BLEScan* pBLEScan;
 
 #define SSpin 5		// Slave Select en pin digital 10
@@ -21,7 +20,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
   void onResult(BLEAdvertisedDevice advertisedDevice) {
     String hora = String(day()) + "/" + String(month()) + "/" + String(year()) + ","+ String(hour()) + ":" + String(minute()) + ":" + String(second()) + ",";//capturar la hora actual
     archivo.print(hora);
-    String datos = "NOMBRE:" + String(advertisedDevice.getName()) + "," + "MAC ADDRESS:" + advertisedDevice.getAddress().toString() + "," + "RSSI: " + String(advertisedDevice.getRSSI());
+    String datos = " NOMBRE: " + String(advertisedDevice.getName()) + ", " + "MAC ADDRESS: " + advertisedDevice.getAddress().toString() + ", " + "RSSI: " + String(advertisedDevice.getRSSI());
     archivo.println(datos);
     //Encendemos el led
     digitalWrite(pin_15, HIGH);
@@ -39,7 +38,7 @@ void setup() {
   pinMode(pin_dos, OUTPUT);
   pinMode(pin_15, OUTPUT);
 //-------------------------------------------------------------------------------
-
+  settime(12,0,0,23,10,2024);
   digitalWrite(pin_dos, HIGH);//Encendemos el led
   delay(5000);//Esperamos un segundo
   for(int j=0;j<=8;j++)
@@ -52,7 +51,6 @@ void setup() {
   digitalWrite(pin_dos, LOW);  //Apagamos el led
   //Esperamos un segundo
   delay(1000);
-  setTime(t);//toma el tiempo almacenado
   Serial.println("Inicializando tarjeta ...");	// texto en ventana de monitor
   if (!SD.begin(SSpin)) {			// inicializacion de tarjeta SD
     Serial.println("fallo en inicializacion !");// si falla se muestra texto correspondiente y
@@ -111,6 +109,41 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
     }
     archivo.close();	
     delay(10000);
+    while(FileCount == 3)//por cada 12 reportes de 5 minutos se crea uno solo de una hora
+        {
+          String fileNameH = createUniqueFileNameHora();
+          File archivoH = SD.open(fileNameH,FILE_WRITE);
+          if(archivoH){
+            const char* archivos_unir[] = {"reporte_1.txt", "reporte_2.txt", "reporte_3.txt"};
+            const int numero_archivos = sizeof(archivos_unir) / sizeof(archivos_unir[0]); 
+            for(int i=0;i<numero_archivos;i++)
+            {
+              File archivo_actual = SD.open(archivos_unir[i]);
+              if(archivo_actual)
+              {
+                Serial.print("Uniendo ");
+                Serial.println(archivos_unir[i]);//abre los archivos para leer el contenido y unirlos en uno solo
+                while(archivo_actual.available())
+                {
+                  archivoH.write(archivo_actual.read());
+                }
+                archivo_actual.close();
+              }//fin if archivo lecturas
+              else
+                {
+                  Serial.print("Error al abrir ");
+                  Serial.println(archivos_unir[i]);
+                }
+            }//fin for
+              archivoH.close();//cierra el archivo por hora
+              Serial.println("Archivo de hora creado");
+          }//fin if archivoH
+          else
+          {
+            Serial.println("Error al crear archivo por hora");
+          }
+          FileCount = 0;
+        }//fin while cuenta de los numeros de archivo
       Serial.println("Inicializando tarjeta ...");	// texto en ventana de monitor
   if (!SD.begin(SSpin)) {			// inicializacion de tarjeta SD
     Serial.println("fallo en inicializacion !");// si falla se muestra texto correspondiente y
@@ -148,41 +181,7 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
         Serial.println("inicializacion correcta");	// texto de inicializacion correcta
         Serial.println("Volviendo al escaneo...");
   }//si no encuentra ningun archivo creado abre uno
-    while(FileCount == 12)//por cada 12 reportes de 5 minutos se crea uno solo de una hora
-    {
-      String fileNameH = createUniqueFileNameHora();
-      File archivoH = SD.open(fileNameH,FILE_WRITE);
-      if(archivoH){
-        const char* archivos_unir[] = {"reporte_1.txt", "reporte_2.txt", "reporte_3.txt", "reporte_4.txt", "reporte_5.txt", "reporte_6.txt", "reporte_7.txt", "reporte_8.txt", "reporte_9.txt", "reporte_10.txt", "reporte_11.txt", "reporte_12.txt"};
-        const int numero_archivos = sizeof(archivos_unir) / sizeof(archivos_unir[0]); 
-        for(int i=0;i<=numero_archivos;i++)
-        {
-          File archivo = SD.open(archivos_unir[0]);
-          if(archivo)
-          {
-            Serial.print("Uniendo ");
-            Serial.println(archivos_unir[i]);//abre los archivos para leer el contenido y unirlos en uno solo
-            while(archivo.available())
-            {
-              archivoH.write(archivo.read());
-            }
-            archivo.close();
-          }//fin if archivo lecturas
-          else
-            {
-              Serial.print("Error al abrir ");
-              Serial.println(archivos_unir[i]);
-            }
-        }//fin for
-      archivoH.close();//cierra el archivo por hora
-      Serial.println("Archivo de hora creado");
-      }//fin if archivoH
-      else
-      {
-        Serial.println("Error al crear archivo por hora");
-      }
-      FileCount = 0;
-    }//fin while cuenta de los numeros de archivo
+    
 
 }//FIN LOOP
 
