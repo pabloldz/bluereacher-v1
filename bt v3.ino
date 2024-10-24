@@ -1,5 +1,6 @@
 #include <SPI.h>		// incluye libreria interfaz SPI
 #include <SD.h>			// incluye libreria para tarjetas SD
+#include <FS.h>
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEScan.h>
@@ -8,19 +9,25 @@
 //Declaramos el pin que encendera
 int pin_dos = 2;
 int pin_15 = 15;
+
 int scanTime = 10; // in seconds
 BLEScan* pBLEScan;
 
 #define SSpin 5		// Slave Select en pin digital 10
 
-File archivo;			// objeto archivo del tipo File
-int FileCount,FileCountop,FileCountH;
+File archivo, copia;			// objeto archivo del tipo File
+int FileCount,FileCountop,FileCountH,FileCountc;
+
+void reloj()
+{
+  String fecha = String(day()) + "/" + dato(month()) + "/" + dato(year()) + "," + String(hour())+ ":" + dato(minute()) + ":" + dato(second()) + ",";
+  archivo.print(fecha);
+}
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
   void onResult(BLEAdvertisedDevice advertisedDevice) {
-    String hora = String(day()) + "/" + String(month()) + "/" + String(year()) + ","+ String(hour()) + ":" + String(minute()) + ":" + String(second()) + ",";//capturar la hora actual
-    archivo.print(hora);
-    String datos = " NOMBRE: " + String(advertisedDevice.getName()) + ", " + "MAC ADDRESS: " + advertisedDevice.getAddress().toString() + ", " + "RSSI: " + String(advertisedDevice.getRSSI());
+    reloj();
+    String datos = "NOMBRE:" + String(advertisedDevice.getName()) + "," + "MAC ADDRESS:" + advertisedDevice.getAddress().toString() + "," + "RSSI: " + String(advertisedDevice.getRSSI());
     archivo.println(datos);
     //Encendemos el led
     digitalWrite(pin_15, HIGH);
@@ -35,10 +42,11 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
 void setup() {
   Serial.begin(115200);
+  setTime(12,0,0,23,10,2024);
   pinMode(pin_dos, OUTPUT);
   pinMode(pin_15, OUTPUT);
 //-------------------------------------------------------------------------------
-  settime(12,0,0,23,10,2024);
+
   digitalWrite(pin_dos, HIGH);//Encendemos el led
   delay(5000);//Esperamos un segundo
   for(int j=0;j<=8;j++)
@@ -66,10 +74,8 @@ void setup() {
   pBLEScan->setWindow(99);  // less or equal setInterval value
 
   Serial.println("inicializacion correcta");	// texto de inicializacion correcta
-  delay(100); 
   
-
-
+  delay(100); 
 }//fin setup
 
 void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
@@ -91,6 +97,7 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
     Serial.println(foundDevices->getCount());
     Serial.println("Scan done!");
     Serial.println("Guardado correctamente");	// texto de escritura correcta en monitor serie
+
     for(int l=0;l<=8;l++)
     {
       digitalWrite(pin_dos, HIGH);//Encendemos el led
@@ -98,7 +105,6 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
       digitalWrite(pin_dos, LOW);//Apagamos el led
       delay(100);//Esperamos un segundo
     }
-
     String fileNameop = openUniqueFileName();
     archivo = SD.open(fileNameop);		// apertura de archivo prueba.txt
     Serial.println(fileNameop);
@@ -109,42 +115,64 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
     }
     archivo.close();	
     delay(10000);
-    while(FileCount == 3)//por cada 12 reportes de 5 minutos se crea uno solo de una hora
+        if(SD.mkdir("/registros"))
+    {
+      String fileNamec = createUniqueFileNamec();
+      copia = SD.open(fileNamec,FILE_WRITE);
+      if(copia)
+      {
+        while(archivo.available())
         {
-          String fileNameH = createUniqueFileNameHora();
-          File archivoH = SD.open(fileNameH,FILE_WRITE);
-          if(archivoH){
-            const char* archivos_unir[] = {"reporte_1.txt", "reporte_2.txt", "reporte_3.txt"};
-            const int numero_archivos = sizeof(archivos_unir) / sizeof(archivos_unir[0]); 
-            for(int i=0;i<numero_archivos;i++)
-            {
-              File archivo_actual = SD.open(archivos_unir[i]);
-              if(archivo_actual)
-              {
-                Serial.print("Uniendo ");
-                Serial.println(archivos_unir[i]);//abre los archivos para leer el contenido y unirlos en uno solo
-                while(archivo_actual.available())
-                {
-                  archivoH.write(archivo_actual.read());
-                }
-                archivo_actual.close();
-              }//fin if archivo lecturas
-              else
-                {
-                  Serial.print("Error al abrir ");
-                  Serial.println(archivos_unir[i]);
-                }
-            }//fin for
-              archivoH.close();//cierra el archivo por hora
-              Serial.println("Archivo de hora creado");
-          }//fin if archivoH
-          else
+           copia.write(archivo.read());
+        }
+      }
+      else
+      {
+        Serial.print("Error al generar copia ");
+        Serial.println(archivo);
+        }
+      copia.close();
+    }//fin if registros copia
+    while(FileCountop == 12)//por cada 12 reportes de 5 minutos se crea uno solo de una hora
+    {
+      if(SD.mkdir("/Registros_hora"))
+      {
+        String fileNameH = createUniqueFileNameHora();
+      File archivoH = SD.open(fileNameH,FILE_WRITE);
+      if(archivoH){
+        const char* archivos_unir[] = {"/reporte_1.txt", "/reporte_2.txt", "/reporte_3.txt", "/reporte_4.txt", "/reporte_5.txt", "/reporte_6.txt", "/reporte_7.txt", "/reporte_8.txt", "/reporte_9.txt", "/reporte_10.txt", "/reporte_11.txt", "/reporte_12.txt"};
+        const int numero_archivos = sizeof(archivos_unir) / sizeof(archivos_unir[0]); 
+        for(int i=0;i<numero_archivos;i++)
+        {
+          File archivo = SD.open(archivos_unir[i]);
+          if(archivo)
           {
-            Serial.println("Error al crear archivo por hora");
-          }
-          FileCount = 0;
-        }//fin while cuenta de los numeros de archivo
-      Serial.println("Inicializando tarjeta ...");	// texto en ventana de monitor
+            Serial.print("Uniendo ");
+            Serial.println(archivos_unir[i]);//abre los archivos para leer el contenido y unirlos en uno solo
+            while(archivo.available())
+            {
+              archivoH.write(archivo.read());
+            }
+            archivo.close();
+          }//fin if archivo lecturas
+          else
+            {
+              Serial.print("Error al abrir ");
+              Serial.println(archivos_unir[i]);
+            }
+        }//fin for
+      archivoH.close();//cierra el archivo por hora
+      Serial.println("Archivo de hora creado");
+      }//fin if archivoH
+      else
+      {
+        Serial.println("Error al crear archivo por hora");
+      }
+      }//fin if mkdir
+      FileCount = 0;
+      FileCountop = 0;
+    }//fin while cuenta de los numeros de archivo
+    Serial.println("Inicializando tarjeta ...");	// texto en ventana de monitor
   if (!SD.begin(SSpin)) {			// inicializacion de tarjeta SD
     Serial.println("fallo en inicializacion !");// si falla se muestra texto correspondiente y
     return;					// se sale del setup() para finalizar el programa
@@ -182,7 +210,6 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
         Serial.println("Volviendo al escaneo...");
   }//si no encuentra ningun archivo creado abre uno
     
-
 }//FIN LOOP
 
 String createUniqueFileName() {
@@ -203,8 +230,22 @@ String openUniqueFileName() {
 
 String createUniqueFileNameHora() {
   FileCountH++; // Incrementa el contador
-  String fileNameH = "/reporte_Hora_"; // Prefijo del nombre del archivo
+  String fileNameH = "/Registros_hora/reporte_Hora_"; // Prefijo del nombre del archivo
   fileNameH += FileCountH; // Agrega el número del contador
-  fileNameH += ".txt"; // Sufijo del archivo
+  fileNameH += ".csv"; // Sufijo del archivo
   return fileNameH;
+}
+
+String dato(int digito)
+{
+  String dt=String("0")+digito;
+  return dt.substring(dt.length()-2);
+}
+
+String createUniqueFileNamec() {
+  FileCountc++; // Incrementa el contador
+  String fileNamec = "/registros/reporte_respaldo_"; // Prefijo del nombre del archivo
+  fileNamec += FileCountc; // Agrega el número del contador
+  fileNamec += ".txt"; // Sufijo del archivo
+  return fileNamec;
 }
