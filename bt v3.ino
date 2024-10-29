@@ -22,6 +22,7 @@ void reloj()
 {
   String fecha = String(day()) + "/" + dato(month()) + "/" + dato(year()) + "," + String(hour())+ ":" + dato(minute()) + ":" + dato(second()) + ",";
   archivo.print(fecha);
+  copia.print(fecha);
 }
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
@@ -29,6 +30,18 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     reloj();
     String datos = "NOMBRE:" + String(advertisedDevice.getName()) + "," + "MAC ADDRESS:" + advertisedDevice.getAddress().toString() + "," + "RSSI: " + String(advertisedDevice.getRSSI());
     archivo.println(datos);
+    copia.println(datos);
+    if(SD.mkdir("/registros"))
+    {
+      String fileNamec = createUniqueFileNamec();
+      copia = SD.open(fileNamec,FILE_WRITE);
+      if(!copia)
+      {
+        Serial.print("Error al generar copia ");
+        Serial.println(fileNamec);
+        }
+      copia.close();
+    }//fin if registros copia
     //Encendemos el led
     digitalWrite(pin_15, HIGH);
     //Esperamos un segundo
@@ -65,7 +78,7 @@ void setup() {
     return;					// se sale del setup() para finalizar el programa
   }
   String fileName = createUniqueFileName();
-  archivo = SD.open(fileName, FILE_WRITE);	// apertura para lectura/escritura de archivo prueba.txt
+  archivo = SD.open(fileName, FILE_WRITE);	// apertura para lectura/escritura de archivo
   BLEDevice::init("");
   pBLEScan = BLEDevice::getScan(); //create new scan
   pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
@@ -112,27 +125,8 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
     Serial.println("Contenido del archivo:");	// texto en monitor serie
     while (archivo.available()) {		// mientras exista contenido en el archivo
       Serial.write(archivo.read());  		// lectura de a un caracter por vez
-    }
-    archivo.close();	
+    }	
     delay(10000);
-        if(SD.mkdir("/registros"))
-    {
-      String fileNamec = createUniqueFileNamec();
-      copia = SD.open(fileNamec,FILE_WRITE);
-      if(copia)
-      {
-        while(archivo.available())
-        {
-           copia.write(archivo.read());
-        }
-      }
-      else
-      {
-        Serial.print("Error al generar copia ");
-        Serial.println(archivo);
-        }
-      copia.close();
-    }//fin if registros copia
     while(FileCountop == 12)//por cada 12 reportes de 5 minutos se crea uno solo de una hora
     {
       if(SD.mkdir("/Registros_hora"))
