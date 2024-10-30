@@ -31,17 +31,6 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     String datos = "NOMBRE:" + String(advertisedDevice.getName()) + "," + "MAC ADDRESS:" + advertisedDevice.getAddress().toString() + "," + "RSSI: " + String(advertisedDevice.getRSSI());
     archivo.println(datos);
     copia.println(datos);
-    if(SD.mkdir("/registros"))
-    {
-      String fileNamec = createUniqueFileNamec();
-      copia = SD.open(fileNamec,FILE_WRITE);
-      if(!copia)
-      {
-        Serial.print("Error al generar copia ");
-        Serial.println(fileNamec);
-        }
-      copia.close();
-    }//fin if registros copia
     //Encendemos el led
     digitalWrite(pin_15, HIGH);
     //Esperamos un segundo
@@ -78,7 +67,10 @@ void setup() {
     return;					// se sale del setup() para finalizar el programa
   }
   String fileName = createUniqueFileName();
+  String fileNamec = createUniqueFileNamec();
   archivo = SD.open(fileName, FILE_WRITE);	// apertura para lectura/escritura de archivo
+  SD.mkdir("/Registros_crudos");
+  copia = SD.open(fileNamec, FILE_WRITE);	// apertura para lectura/escritura de archivo
   BLEDevice::init("");
   pBLEScan = BLEDevice::getScan(); //create new scan
   pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
@@ -89,6 +81,7 @@ void setup() {
   Serial.println("inicializacion correcta");	// texto de inicializacion correcta
   
   delay(100); 
+      
 }//fin setup
 
 void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
@@ -110,6 +103,7 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
     Serial.println(foundDevices->getCount());
     Serial.println("Scan done!");
     Serial.println("Guardado correctamente");	// texto de escritura correcta en monitor serie
+    copia.close();
 
     for(int l=0;l<=8;l++)
     {
@@ -172,7 +166,10 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
     return;					// se sale del setup() para finalizar el programa
   }
   String fileName = createUniqueFileName();
-  archivo = SD.open(fileName, FILE_WRITE);	// apertura para lectura/escritura de archivo prueba.txt
+  String fileNamec = createUniqueFileNamec();
+  archivo = SD.open(fileName, FILE_WRITE);	// apertura para lectura/escritura de archivo
+  SD.mkdir("/Registros_crudos");
+  copia = SD.open(fileNamec, FILE_WRITE);	// apertura para lectura/escritura de archivo
   BLEDevice::init("");
   pBLEScan = BLEDevice::getScan(); //create new scan
   pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
@@ -193,7 +190,10 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
             return;					// se sale del setup() para finalizar el programa
         }
         String fileName = createUniqueFileName();
-        archivo = SD.open(fileName,FILE_WRITE);	// apertura para lectura/escritura de archivo prueba.txt
+        String fileNamec = createUniqueFileNamec();
+        archivo = SD.open(fileName, FILE_WRITE);	// apertura para lectura/escritura de archivo
+        SD.mkdir("/Registros_crudos");
+        copia = SD.open(fileNamec, FILE_WRITE);	// apertura para lectura/escritura de archivo
         BLEDevice::init("");
         pBLEScan = BLEDevice::getScan(); //create new scan
         pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
@@ -238,7 +238,7 @@ String dato(int digito)
 
 String createUniqueFileNamec() {
   FileCountc++; // Incrementa el contador
-  String fileNamec = "/registros/reporte_respaldo_"; // Prefijo del nombre del archivo
+  String fileNamec = "/Registros_crudos/reporte_respaldo_"; // Prefijo del nombre del archivo
   fileNamec += FileCountc; // Agrega el número del contador
   fileNamec += ".txt"; // Sufijo del archivo
   return fileNamec;
