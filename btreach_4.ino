@@ -10,6 +10,7 @@
 int pin_dos = 2;
 int pin_15 = 15;
 
+int hora, minuto, dia, mes, anio;
 
 int scanTime = 10; // in seconds
 BLEScan* pBLEScan;
@@ -45,7 +46,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
 void setup() {
   Serial.begin(115200);
-  if(Serial.available())
+  while(Serial.available()==0)
   {
     String valores = Serial.readStringUntil('\n');//lee hasta hayar un salto de linea
     int index1 = valores.indexOf(',');
@@ -63,11 +64,8 @@ void setup() {
     dia.toInt();
     mes.toInt();
     anio.toInt();
-
-   setTime(hora,minuto,0,dia,mes,anio);
   }
-
-
+  setTime(hora,minuto,0,dia,mes,anio);
   pinMode(pin_dos, OUTPUT);
   pinMode(pin_15, OUTPUT);
 //-------------------------------------------------------------------------------
@@ -108,7 +106,6 @@ void setup() {
 }//fin setup
 
 void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
-
     for(int k=0;k<=2;k++)
     {
       digitalWrite(pin_dos, HIGH);//Encendemos el led
@@ -226,7 +223,7 @@ void loop() {			// funcion loop() obligatoria de declarar pero no utilizada
         Serial.println("inicializacion correcta");	// texto de inicializacion correcta
         Serial.println("Volviendo al escaneo...");
   }//si no encuentra ningun archivo creado abre uno
-    
+
 }//FIN LOOP
 
 String createUniqueFileName() {
